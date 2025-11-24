@@ -1,0 +1,12 @@
+name: mcp-demo
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11.14
+  - pip
+  - pip:
+    - fastmcp>=2.13.0
+    - requests>=2.32.0
+    - python-dotenv>=1.2.0
+
