@@ -1,3 +1,8 @@
 20251124T122949Z Failed to load diana_api control module: /home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory\n20251124T123028Z Failed to load diana_api control module: /home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory\n20251124T123950Z Failed to load diana_api control module: /home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory
 20251124T124012Z Failed to load diana_api control module: /home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory
 20251124T124021Z Failed to load diana_api control module: /home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory
+20251124T160823Z Failed to load diana_api control module: OSError('/home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory')
+20251124T161153Z Failed to load diana_api control module: OSError('/home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory')
+20251124T162002Z Failed to load diana_api control module: OSError('/home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory')
+20251124T162311Z Failed to load diana_api control module: OSError('/home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory')
+20251124T162442Z Failed to load diana_api control module: OSError('/home/wuyifeng/DianaApi/lib/libDianaApi.so: cannot open shared object file: No such file or directory')

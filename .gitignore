@@ -12,17 +12,17 @@ venv/
 env/
 ENV/
 
-# IDE 配置
+# IDE 配置（新增：Cursor编辑器配置）
 .vscode/
+.cursor/  
 .idea/
 *.swp
 *.swo
 *~
 
-# 日志文件
-var/mcp
+# 运行时生成的MCP数据（优化：忽略整个var/mcp目录，包含版本备份、日志）
+var/mcp/  
 
 # 操作系统文件
 .DS_Store
 Thumbs.db
-
