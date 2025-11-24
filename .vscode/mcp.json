@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "diana-mcp": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["server/mcp_server.py"]
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "mcpServers": {
+      "diana-mcp": {
+        "command": "/home/wuyifeng/miniconda3/envs/mcp-demo/bin/python",
+        "args": ["server/mcp_server.py"],
+        "cwd": "/home/wuyifeng/DianaApi"
+      }
+    }
+  }
