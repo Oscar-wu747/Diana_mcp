@@ -1,46 +1,33 @@
 #!/usr/bin/env python3
 from typing import Optional
 
-"""Minimal MCP server for robot arm position retrieval.
+"""简化的MCP服务器，用于获取机械臂关节位置"""
 
-This version centralizes paths and logging via `server.config` and
-`server.error_handler` and keeps only the basic MCP tools required by the
-agent: reading joint positions and reading the target file.
-"""
-
-import os
 import sys
 import importlib.util
 import types
-import hashlib
-from pathlib import Path
 from fastmcp import FastMCP
 
-from .config import TARGET_PATH, SRC_DIR, DATA_DIR, ensure_dirs
-from .error_handler import log_exception, log
+from .config import SRC_DIR, ensure_dirs, get_net_info
+from .error_handler import log_exception, log, RobotControlError
 
-# Ensure data dirs exist
+# 确保数据目录存在
 ensure_dirs()
 
 
 def _load_robot_control():
-    """Load `diana_api.control` and return a module-like object.
-
-    If loading fails, return a minimal stub exposing `RobotError` and
-    `controller` with the same API used by the MCP tools so callers can
-    still import symbols and the server remains responsive.
-    """
+    """加载机械臂控制模块，失败时返回备用存根"""
     init_file = SRC_DIR / 'diana_api' / '__init__.py'
     spec = importlib.util.spec_from_file_location('diana_api', init_file)
     if spec is None or spec.loader is None:
-        raise RuntimeError('Unable to locate diana_api package at src/diana_api')
+        raise RuntimeError('无法定位diana_api包')
     module = importlib.util.module_from_spec(spec)
     sys.modules.setdefault('diana_api', module)
     try:
         spec.loader.exec_module(module)
         return module.control
     except Exception as exc:
-        log_exception(exc, prefix='Failed to load diana_api control: ')
+        log_exception(exc, prefix='加载diana_api控制模块失败: ')
 
         class RobotError(RuntimeError):
             pass
@@ -54,92 +41,46 @@ def _load_robot_control():
                 return self._ip
 
             def ensure_connected(self, *, ip=None, _net_info=None):
-                raise RobotError('robot library not available')
+                raise RobotError('机械臂库不可用')
 
             def get_joint_positions(self):
-                raise RobotError('robot library not available')
+                raise RobotError('机械臂库不可用')
 
         ctrl_mod = types.SimpleNamespace(RobotError=RobotError, controller=_StubController())
         return ctrl_mod
 
 
-# Load robot control
+# 加载机械臂控制模块
 robot_control = _load_robot_control()
 
-# Initialize FastMCP server
-mcp = FastMCP("Robot Control Server")
+# 初始化FastMCP服务器
+mcp = FastMCP("机械臂位置服务器")
 
 
 @mcp.tool()
-def get_joint_positions(ip: Optional[str] = None):
-    """Get current joint positions of the robot arm.
-
-    Args:
-        ip: IP address of the robot (if not already connected)
-
-    Returns:
-        dict: Dictionary containing IP address and joint positions
-    """
+def get_joint_positions(ip: Optional[str] = None) -> dict:
+    """获取机械臂关节位置"""
     try:
-        robot_control.controller.ensure_connected(ip=ip)
+        if ip:
+            net_info = get_net_info(ip)
+            robot_control.controller.ensure_connected(net_info=net_info)
+        else:
+            robot_control.controller.ensure_connected()
+
         joints = robot_control.controller.get_joint_positions()
-        return {'ip': robot_control.controller.ip_address, 'joints': joints}
+        return {
+            'ip': robot_control.controller.ip_address,
+            'joints': joints,
+            'joint_count': len(joints)
+        }
     except getattr(robot_control, 'RobotError', Exception) as exc:
-        # Log and re-raise to allow MCP client to see original error
-        log_exception(exc, prefix='get_joint_positions failed: ')
-        raise
-
-
-@mcp.tool()
-def read_target_file() -> str:
-    """Return content of the target file (text)."""
-    try:
-        with open(TARGET_PATH, 'r', encoding='utf-8', errors='replace') as f:
-            return f.read()
-    except Exception as exc:
-        log_exception(exc, prefix='read_target_file failed: ')
-        raise
-
-
-@mcp.tool()
-def write_target_file(content: str, message: Optional[str] = None) -> dict:
-    """Create a backup of `content` and atomically replace the target file.
-
-    Returns a dict with the backup filename and metadata.
-    """
-    ts = __import__('datetime').datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
-    sha1 = hashlib.sha1(content.encode('utf-8')).hexdigest()
-    fname = f'{ts}_{sha1[:8]}.py'
-    dest = DATA_DIR / fname
-
-    meta = {'timestamp': ts, 'sha1': sha1, 'message': message or ''}
-    try:
-        with open(dest, 'w', encoding='utf-8') as bf:
-            bf.write('# MCP version backup\\n')
-            bf.write('# ' + __import__('json').dumps(meta, ensure_ascii=False) + '\\n')
-            bf.write(content)
-
-        # Ensure target directory exists before atomic replace
-        TARGET_PATH.parent.mkdir(parents=True, exist_ok=True)
-        tmp = TARGET_PATH.with_name(TARGET_PATH.name + '.mcp.tmp')
-        with open(tmp, 'w', encoding='utf-8') as tf:
-            tf.write(content)
-        os.replace(tmp, TARGET_PATH)
-
-        log(f'write_target_file: created {fname}')
-        return {'version': fname, 'meta': meta}
-    except Exception as exc:
-        log_exception(exc, prefix='write_target_file failed: ')
-        raise
+        log_exception(exc, prefix='获取关节位置失败: ')
+        raise RobotControlError("GET_JOINT_POS_FAILED") from exc
 
 
 def main():
-    # Ensure target exists
-    if not TARGET_PATH.is_file():
-        TARGET_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(TARGET_PATH, 'w', encoding='utf-8') as f:
-            f.write('# DianaApi placeholder created by mcp_server\\\\n')
-
+    """启动MCP服务器"""
+    log("启动机械臂位置MCP服务器")
     mcp.run()
 
 

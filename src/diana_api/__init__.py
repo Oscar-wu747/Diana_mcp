@@ -6,5 +6,3 @@
 from .diana_api import *  # noqa: F401,F403
 from . import control  # noqa: F401
 
-__all__ = [name for name in globals() if not name.startswith('_')]
-

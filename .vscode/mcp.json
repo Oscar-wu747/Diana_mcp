@@ -2,9 +2,9 @@
   "servers": {
     "diana-mcp": {
       "type": "stdio",
-      "command": "/home/wuyifeng/miniconda3/envs/mcp-demo/bin/python",
-      "args": ["server/mcp_server.py"],
-      "cwd": "/home/wuyifeng/DianaApi"
+      "command": "/home/jetson/miniconda3/envs/Diana/bin/python",
+      "args": ["-m", "server.mcp_server"],
+      "cwd": "/home/jetson/Documents/DianaApi_agent_MCP"
     }
   }
 }
