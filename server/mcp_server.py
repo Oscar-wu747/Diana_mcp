@@ -78,6 +78,73 @@ def get_joint_positions(ip: Optional[str] = None) -> dict:
         raise RobotControlError("GET_JOINT_POS_FAILED") from exc
 
 
+@mcp.tool()
+def move_joint_positions(ip: Optional[str] = None, joints: Optional[list] = None, velocity: float = 0.5, acceleration: float = 0.5) -> dict:
+    """以关节模式移动机械臂（7 个关节值）"""
+    try:
+        if not joints or len(joints) != 7:
+            raise RobotControlError("INVALID_PARAMETERS")
+
+        if ip:
+            net_info = get_net_info(ip)
+            robot_control.controller.ensure_connected(net_info=net_info)
+        else:
+            robot_control.controller.ensure_connected()
+
+        result = robot_control.controller.move_joint_positions(joints, velocity, acceleration)
+        # 返回控制器 ip 与 move 的结果（如 taskId / status）
+        return {
+            'ip': robot_control.controller.ip_address,
+            'result': result
+        }
+    except getattr(robot_control, 'RobotError', Exception) as exc:
+        log_exception(exc, prefix='执行关节运动失败: ')
+        raise RobotControlError("MOVE_FAILED") from exc
+
+
+@mcp.tool()
+def move_linear_pose(ip: Optional[str] = None, pose: Optional[list] = None, velocity: float = 0.2, acceleration: float = 0.2) -> dict:
+    """以 TCP 直线模式移动机械臂（6 元 pose）"""
+    try:
+        if not pose or len(pose) != 6:
+            raise RobotControlError("INVALID_PARAMETERS")
+
+        if ip:
+            net_info = get_net_info(ip)
+            robot_control.controller.ensure_connected(net_info=net_info)
+        else:
+            robot_control.controller.ensure_connected()
+
+        result = robot_control.controller.move_linear_pose(pose, velocity, acceleration)
+        return {
+            'ip': robot_control.controller.ip_address,
+            'result': result
+        }
+    except getattr(robot_control, 'RobotError', Exception) as exc:
+        log_exception(exc, prefix='执行直线运动失败: ')
+        raise RobotControlError("MOVE_FAILED") from exc
+
+
+@mcp.tool()
+def stop_motion(ip: Optional[str] = None) -> dict:
+    """立即停止机械臂的运动"""
+    try:
+        if ip:
+            net_info = get_net_info(ip)
+            robot_control.controller.ensure_connected(net_info=net_info)
+        else:
+            robot_control.controller.ensure_connected()
+
+        result = robot_control.controller.stop_motion()
+        return {
+            'ip': robot_control.controller.ip_address,
+            'result': result
+        }
+    except getattr(robot_control, 'RobotError', Exception) as exc:
+        log_exception(exc, prefix='停止运动失败: ')
+        raise RobotControlError("STOP_FAILED") from exc
+
+
 def main():
     """启动MCP服务器"""
     log("启动机械臂位置MCP服务器")

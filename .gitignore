@@ -12,9 +12,11 @@ venv/
 env/
 ENV/
 
-# IDE 配置（新增：Cursor编辑器配置）
-.vscode/
-.cursor/  
+# IDE 配置（保留MCP配置但忽略其他IDE文件）
+.vscode/*
+!.vscode/mcp.json
+.cursor/*
+!.cursor/mcp/myserver/mcp.json
 .idea/
 *.swp
 *.swo

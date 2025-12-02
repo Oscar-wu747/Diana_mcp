@@ -2,9 +2,14 @@
   "servers": {
     "diana-mcp": {
       "type": "stdio",
-      "command": "/home/jetson/miniconda3/envs/Diana/bin/python",
+      "command": "${command:python.interpreterPath}",
       "args": ["-m", "server.mcp_server"],
-      "cwd": "/home/jetson/Documents/DianaApi_agent_MCP"
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "FASTMCP_NO_BANNER": "1"
+      }
     }
   }
 }
+

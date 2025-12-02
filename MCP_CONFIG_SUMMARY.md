@@ -1,7 +1,10 @@
 # MCP 配置总结
 
 ## 配置文件位置
-- **Cursor MCP 配置**: `~/.cursor/mcp.json`
+- **VS Code MCP 配置**: `.vscode/mcp.json` (项目级配置，便于移植)
+- **Cursor MCP 配置**: `.cursor/mcp/myserver/mcp.json` (项目级配置，便于移植)
+- **用户级配置**: `~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` (VS Code推荐)
+- **Cursor 用户级配置**: `~/.config/cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` (Cursor推荐)
 
 ## 项目结构
 ```
@@ -13,6 +16,7 @@ DianaApi_agent_MCP/
 ├── src/
 │   └── diana_api/         # 机械臂 API 核心库
 ├── lib/                   # 底层库文件 (.so)
+├── .mcp_env               # 环境配置
 └── var/
     └── mcp/               # MCP 数据目录
 ```
@@ -24,19 +28,24 @@ DianaApi_agent_MCP/
 
 ### 配置详情
 - **类型**: stdio
-- **Python 路径**: `/home/jetson/miniconda3/envs/Diana/bin/python`
-- **运行方式**: 模块方式 (`-m server.mcp_server`)
-- **工作目录**: `/home/jetson/Documents/DianaApi_agent_MCP`
-- **环境变量**: `PYTHONPATH=/home/jetson/Documents/DianaApi_agent_MCP`
+- **命令**: 使用VS Code当前Python解释器 (`${command:python.interpreterPath}`)
+- **参数**: `["-m", "server.mcp_server"]`
+- **工作目录**: `${workspaceFolder}`
+- **环境变量**:
+  - `PYTHONPATH=${workspaceFolder}`
+  - `FASTMCP_NO_BANNER=1`
 
 ### 可用工具
 - `get_joint_positions(ip?)`: 获取机械臂关节位置
+- `move_joint_positions(ip?, joints, velocity, acceleration)`: 关节模式移动
+- `move_linear_pose(ip?, pose, velocity, acceleration)`: 直线模式移动
+- `stop_motion(ip?)`: 停止运动
 
 ## 测试结果
 ✅ 所有配置测试通过
 
 ## 使用方法
-1. 重启 Cursor 或重新加载 MCP 配置
-2. MCP 服务器将自动启动
-3. 可以在 Cursor 中使用 `get_joint_positions` 工具
-
+1. 确保conda环境 `mcp-demo` 已激活
+2. 重启 VS Code/Cursor 或重新加载 MCP 配置
+3. MCP 服务器将自动启动
+4. 可以在编辑器中使用上述工具
