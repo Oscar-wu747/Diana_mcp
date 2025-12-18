@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Sequence, Optional, List, Dict, Any
 import threading
+import uuid
+import time
+from datetime import datetime
 
 from . import diana_api as api
 
@@ -31,6 +34,7 @@ class RobotController:
     _ip_address: Optional[str] = None
     _net_info: Optional[tuple] = None
     _task_counter: int = 0
+    _tasks: Dict[str, Dict[str, Any]] = field(default_factory=dict, init=False)
 
     @property
     def is_connected(self) -> bool:
@@ -123,6 +127,7 @@ class RobotController:
         if len(joints) != 7:
             raise RobotError('move_joint_positions expects 7 joint values.')
         task_id = self._next_task_id()
+        task_uuid = uuid.uuid4().hex
         if not api.moveJToTarget(
             list(joints),
             velocity,
@@ -133,7 +138,16 @@ class RobotController:
             self._ip_address or '',
         ):
             raise RobotError('moveJToTarget failed.')
-        return {'status': 'moving', 'taskId': task_id, 'mode': 'joint'}
+
+        # register task and start monitor
+        self._register_task(task_uuid, 'joint_move', self._ip_address, {
+            'taskId': task_id,
+            'joints': list(joints),
+            'velocity': velocity,
+            'acceleration': acceleration,
+        })
+        self._start_task_monitor(task_uuid)
+        return {'status': 'moving', 'taskId': task_id, 'task_id': task_uuid, 'mode': 'joint'}
 
     def move_linear_pose(
         self,
@@ -149,6 +163,7 @@ class RobotController:
         if len(pose) != 6:
             raise RobotError('move_linear_pose expects 6 pose values.')
         task_id = self._next_task_id()
+        task_uuid = uuid.uuid4().hex
         if not api.moveLToPose(
             list(pose),
             velocity,
@@ -159,7 +174,15 @@ class RobotController:
             self._ip_address or '',
         ):
             raise RobotError('moveLToPose failed.')
-        return {'status': 'moving', 'taskId': task_id, 'mode': 'linear'}
+
+        self._register_task(task_uuid, 'linear_move', self._ip_address, {
+            'taskId': task_id,
+            'pose': list(pose),
+            'velocity': velocity,
+            'acceleration': acceleration,
+        })
+        self._start_task_monitor(task_uuid)
+        return {'status': 'moving', 'taskId': task_id, 'task_id': task_uuid, 'mode': 'linear'}
 
     def execute_joint_sequence(
         self,
@@ -171,12 +194,110 @@ class RobotController:
         if not path:
             raise RobotError('Path is empty.')
         task_id = self._next_task_id()
+        task_uuid = uuid.uuid4().hex
         for idx, joints in enumerate(path):
             if len(joints) != 7:
                 raise RobotError(f'Path point #{idx} must contain 7 joints.')
             if not api.moveJToTarget(list(joints), velocity, acceleration, 0, 0.0, 0.0, self._ip_address or ''):
                 raise RobotError(f'moveJToTarget failed at waypoint #{idx}.')
-        return {'status': 'queued', 'taskId': task_id, 'points': len(path)}
+        self._register_task(task_uuid, 'joint_sequence', self._ip_address, {
+            'taskId': task_id,
+            'points': len(path),
+            'path': [list(p) for p in path]
+        })
+        # We consider sequence queued; monitor can check robot state if needed
+        self._start_task_monitor(task_uuid)
+        return {'status': 'queued', 'taskId': task_id, 'task_id': task_uuid, 'points': len(path)}
+
+    # Task lifecycle helpers
+    def _register_task(self, task_id: str, task_type: str, ip: Optional[str], meta: Optional[Dict[str, Any]] = None):
+        with self._lock:
+            self._tasks[task_id] = {
+                'task_id': task_id,
+                'type': task_type,
+                'status': 'running',
+                'started_at': datetime.utcnow().isoformat() + 'Z',
+                'ip': ip,
+                'meta': meta or {},
+                'event': threading.Event(),
+            }
+
+    def _start_task_monitor(self, task_id: str):
+        def monitor():
+            try:
+                while True:
+                    # Poll robot state; if non-zero -> not running
+                    try:
+                        state = self.get_robot_state()
+                    except RobotError:
+                        # If we cannot read state, mark error
+                        with self._lock:
+                            t = self._tasks.get(task_id)
+                            if t:
+                                t['status'] = 'error'
+                                t['meta']['error'] = 'get_robot_state_failed'
+                                t['event'].set()
+                        return
+
+                    if state != 0:
+                        with self._lock:
+                            t = self._tasks.get(task_id)
+                            if t and t['status'] == 'running':
+                                t['status'] = 'completed'
+                                t['completed_at'] = datetime.utcnow().isoformat() + 'Z'
+                                t['event'].set()
+                        return
+                    time.sleep(0.1)
+            except Exception as exc:
+                with self._lock:
+                    t = self._tasks.get(task_id)
+                    if t:
+                        t['status'] = 'error'
+                        t['meta']['error'] = repr(exc)
+                        t['event'].set()
+
+        th = threading.Thread(target=monitor, daemon=True)
+        th.start()
+
+    def get_task(self, task_id: str) -> Dict[str, Any]:
+        with self._lock:
+            t = self._tasks.get(task_id)
+            if not t:
+                raise RobotError('Task not found')
+            # return a shallow copy without threading.Event
+            result = {k: v for k, v in t.items() if k != 'event'}
+            return result
+
+    def wait_task(self, task_id: str, timeout: Optional[float] = None) -> Dict[str, Any]:
+        with self._lock:
+            t = self._tasks.get(task_id)
+            if not t:
+                raise RobotError('Task not found')
+            event = t['event']
+        completed = event.wait(timeout)
+        if not completed:
+            raise RobotError('Task wait timeout')
+        return self.get_task(task_id)
+
+    def cancel_task(self, task_id: str) -> Dict[str, Any]:
+        with self._lock:
+            t = self._tasks.get(task_id)
+            if not t:
+                raise RobotError('Task not found')
+            if t['status'] not in ('running', 'queued'):
+                return t
+        # Attempt to stop robot motion
+        try:
+            self.stop_motion()
+            with self._lock:
+                t = self._tasks.get(task_id)
+                if t:
+                    t['status'] = 'aborted'
+                    t['aborted_at'] = datetime.utcnow().isoformat() + 'Z'
+                    t['event'].set()
+            return self.get_task(task_id)
+        except RobotError as exc:
+            raise RobotError('Cancel failed') from exc
 
     def get_joint_positions(self) -> List[float]:
         self._require_connection()

@@ -31,3 +31,5 @@ VS Code 中可在 `.vscode/mcp.json` 指向同样的命令。
 | `stop_motion` | 立即停止机械臂运动 | 可选 `ip:str` |
 
 所有工具都基于 `diana_api.control` 模块，提供高层封装和错误处理。
+
+示例脚本位于仓库的 `examples/` 目录；例如 `examples/call_mcp_tool.py` 提供了一个本地直接调用工具的示例，便于开发时快速验证功能。

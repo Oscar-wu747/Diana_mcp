@@ -566,3 +566,62 @@ def register_tools(mcp):
                 'ip': ip or 'N/A',
                 'result': None
             }
+
+    @mcp.tool()
+    def get_task(task_id: str) -> dict:
+        """获取指定任务的状态"""
+        try:
+            t = robot_control.controller.get_task(task_id)
+            return {
+                'success': True,
+                'task': t
+            }
+        except getattr(robot_control, 'RobotError', Exception) as exc:
+            log_exception(exc, prefix='获取任务失败: ')
+            return {
+                'success': False,
+                'error': 'TASK_NOT_FOUND',
+                'message': f"获取任务失败: {str(exc)}",
+                'task_id': task_id
+            }
+
+    @mcp.tool()
+    def wait_task(task_id: str, timeout: Optional[float] = None) -> dict:
+        """等待指定任务完成（timeout 秒可选）"""
+        try:
+            t = robot_control.controller.wait_task(task_id, timeout)
+            return {
+                'success': True,
+                'task': t
+            }
+        except getattr(robot_control, 'RobotError', Exception) as exc:
+            log_exception(exc, prefix='等待任务失败: ')
+            msg = str(exc)
+            if 'timeout' in msg.lower():
+                err = 'TASK_TIMEOUT'
+            else:
+                err = 'TASK_NOT_FOUND'
+            return {
+                'success': False,
+                'error': err,
+                'message': f"等待任务失败: {msg}",
+                'task_id': task_id
+            }
+
+    @mcp.tool()
+    def cancel_task(task_id: str) -> dict:
+        """取消指定任务（会尝试停止机械臂）"""
+        try:
+            t = robot_control.controller.cancel_task(task_id)
+            return {
+                'success': True,
+                'task': t
+            }
+        except getattr(robot_control, 'RobotError', Exception) as exc:
+            log_exception(exc, prefix='取消任务失败: ')
+            return {
+                'success': False,
+                'error': 'TASK_CANCEL_FAILED',
+                'message': f"取消任务失败: {str(exc)}",
+                'task_id': task_id
+            }
