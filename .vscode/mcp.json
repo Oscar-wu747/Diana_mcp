@@ -6,8 +6,7 @@
       "args": ["-m", "server.mcp_server"],
       "cwd": "${workspaceFolder}",
       "env": {
-        "PYTHONPATH": "${workspaceFolder}",
-        "FASTMCP_NO_BANNER": "1"
+        "PYTHONPATH": "${workspaceFolder}"
       }
     }
   }

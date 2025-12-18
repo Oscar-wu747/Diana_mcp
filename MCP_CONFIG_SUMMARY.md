@@ -33,13 +33,20 @@ DianaApi_agent_MCP/
 - **工作目录**: `${workspaceFolder}`
 - **环境变量**:
   - `PYTHONPATH=${workspaceFolder}`
-  - `FASTMCP_NO_BANNER=1`
 
 ### 可用工具
+- `connect_robot(ip?)`: 连接到机械臂
+- `disconnect_robot()`: 断开与机械臂的连接
 - `get_joint_positions(ip?)`: 获取机械臂关节位置
+- `get_tcp_pose(ip?)`: 获取机械臂TCP位置
+- `get_robot_state(ip?)`: 获取机械臂状态信息
 - `move_joint_positions(ip?, joints, velocity, acceleration)`: 关节模式移动
 - `move_linear_pose(ip?, pose, velocity, acceleration)`: 直线模式移动
+- `move_tcp_direction(ip?, direction, velocity, acceleration)`: TCP方向移动
+- `rotate_tcp_direction(ip?, direction, velocity, acceleration)`: TCP旋转
 - `stop_motion(ip?)`: 停止运动
+- `resume_motion(ip?)`: 恢复运动
+- `enable_free_driving(ip?, mode)`: 启用自由驱动模式 (0: 禁用, 1: 正常, 2: 强制)
 
 ## 测试结果
 ✅ 所有配置测试通过

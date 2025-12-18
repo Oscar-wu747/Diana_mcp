@@ -17,6 +17,7 @@ ENV/
 !.vscode/mcp.json
 .cursor/*
 !.cursor/mcp/myserver/mcp.json
+.mcp_env
 .idea/
 *.swp
 *.swo

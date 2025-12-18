@@ -83,6 +83,32 @@ class RobotController:
             raise RobotError('stop command failed.')
         return {'status': 'stopped'}
 
+    def resume_motion(self):
+        self._require_connection()
+        if not api.resume(self._ip_address or ''):
+            raise RobotError('resume command failed.')
+        return {'status': 'resumed'}
+
+    def enable_free_driving(self, mode: int):
+        self._require_connection()
+        if not api.freeDriving(mode, self._ip_address or ''):
+            raise RobotError('freeDriving command failed.')
+        return {'status': 'free_driving_enabled', 'mode': mode}
+
+    def move_tcp_direction(self, direction: int, velocity: float, acceleration: float):
+        self._require_connection()
+        task_id = self._next_task_id()
+        if not api.moveTCP(direction, velocity, acceleration, self._ip_address or ''):
+            raise RobotError('moveTCP failed.')
+        return {'status': 'queued', 'taskId': task_id}
+
+    def rotate_tcp_direction(self, direction: int, velocity: float, acceleration: float):
+        self._require_connection()
+        task_id = self._next_task_id()
+        if not api.rotationTCP(direction, velocity, acceleration, self._ip_address or ''):
+            raise RobotError('rotationTCP failed.')
+        return {'status': 'queued', 'taskId': task_id}
+
     def move_joint_positions(
         self,
         joints: Sequence[float],
@@ -166,12 +192,31 @@ class RobotController:
             raise RobotError('getTcpPos failed.')
         return pose
 
+    def get_robot_state(self) -> Dict[str, Any]:
+        self._require_connection()
+        state = api.getRobotState(self._ip_address or '')
+        if state is None:
+            raise RobotError('getRobotState failed.')
+        return state
+
     def status(self) -> Dict[str, Any]:
-        return {
-            'connected': self._connected,
-            'ip': self._ip_address,
-            'taskCounter': self._task_counter,
-        }
+        if not self._connected:
+            return {'connected': False}
+        try:
+            state = self.get_robot_state()
+            return {
+                'connected': True,
+                'ip': self._ip_address,
+                'taskCounter': self._task_counter,
+                'robotState': state
+            }
+        except RobotError:
+            return {
+                'connected': True,
+                'ip': self._ip_address,
+                'taskCounter': self._task_counter,
+                'robotState': None
+            }
 
     def _require_connection(self):
         if not self._connected:
