@@ -5,7 +5,6 @@ from fastmcp import Client
 ROBOT_IP = "192.168.10.75"  # 请替换为您实际的机器人 IP 地址
 
 async def main():
-    # 连接到 Diana MCP 服务器
     async with Client("server.mcp_server") as client:
         print("已连接到 Diana MCP 服务器")
 
