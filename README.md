@@ -76,7 +76,9 @@ DianaApi_agent_MCP/
 │   ├── mcp_server.py      # MCP 服务器主文件
 │   ├── tools.py           # 工具定义
 │   ├── config.py          # 配置管理
-│   └── error_handler.py   # 错误处理
+│   ├── error_handler.py   # 错误处理
+│   ├── utils.py           # 工具函数和辅助类
+│   └── robot_loader.py    # 机器人控制模块加载器
 ├── src/
 │   └── diana_api/         # 机械臂 API 核心库
 ├── lib/                   # 底层库文件 (.so)
@@ -84,9 +86,18 @@ DianaApi_agent_MCP/
 ├── var/
 │   └── mcp/               # MCP 数据目录
 ├── examples/              # 示例脚本（`example_client.py`, `call_mcp_tool.py`）
+├── tests/                 # 测试脚本
 ├── environment.yml        # conda环境配置
 └── install.sh            # 安装脚本
 ```
+
+### 代码架构
+
+项目采用**模板方法模式（Template Method Pattern）**统一管理所有 MCP 工具函数：
+
+- **统一执行模板**: `_execute_robot_action()` 和 `_execute_robot_action_async()` 统一处理连接检查、输出抑制、错误处理和响应格式化
+- **工具函数简化**: 每个工具函数只需关注参数验证和调用对应的 controller 方法
+- **代码复用**: 减少重复代码约 77 行，提高可维护性
 
 ## 使用示例
 
