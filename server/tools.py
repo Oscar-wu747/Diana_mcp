@@ -6,6 +6,10 @@ from .utils import SuppressRobotOutput, _normalize_ip, _get_ip_or_default, ensur
 from .robot_loader import robot_control
 from .config import get_net_info
 from .error_handler import log_exception, RobotControlError
+from .validators import (
+    validate_joints, validate_pose, validate_velocity, 
+    validate_acceleration, validate_tcp_direction, validate_free_driving_mode
+)
 
 
 def _execute_robot_action(
@@ -286,17 +290,21 @@ def register_tools(mcp):
             acceleration: 加速度 (默认 0.5)
         """
         # 参数验证
-        if not joints or len(joints) != 7:
+        try:
+            validated_joints = validate_joints(joints, "joints")
+            validated_velocity = validate_velocity(velocity, "velocity")
+            validated_acceleration = validate_acceleration(acceleration, "acceleration")
+        except ValueError as e:
             return {
                 'success': False,
                 'error': 'INVALID_PARAMETERS',
-                'message': '关节移动需要 7 个关节值',
+                'message': str(e),
                 'ip': ip or 'N/A',
                 'result': None
             }
         
         def action():
-            return robot_control.controller.move_joint_positions(joints, velocity, acceleration)
+            return robot_control.controller.move_joint_positions(validated_joints, validated_velocity, validated_acceleration)
         
         return _execute_robot_action(
             action=action,
@@ -330,17 +338,21 @@ def register_tools(mcp):
             }
         
         # 参数验证
-        if not joints or len(joints) != 7:
+        try:
+            validated_joints = validate_joints(joints, "joints_json")
+            validated_velocity = validate_velocity(velocity, "velocity")
+            validated_acceleration = validate_acceleration(acceleration, "acceleration")
+        except ValueError as e:
             return {
                 'success': False,
                 'error': 'INVALID_PARAMETERS',
-                'message': '关节移动需要 7 个关节值',
+                'message': str(e),
                 'ip': ip or 'N/A',
                 'result': None
             }
         
         def action():
-            return robot_control.controller.move_joint_positions(joints, velocity, acceleration)
+            return robot_control.controller.move_joint_positions(validated_joints, validated_velocity, validated_acceleration)
         
         return _execute_robot_action(
             action=action,
@@ -362,17 +374,21 @@ def register_tools(mcp):
             acceleration: 加速度 (默认 0.2)
         """
         # 参数验证
-        if not pose or len(pose) != 6:
+        try:
+            validated_pose = validate_pose(pose, "pose")
+            validated_velocity = validate_velocity(velocity, "velocity")
+            validated_acceleration = validate_acceleration(acceleration, "acceleration")
+        except ValueError as e:
             return {
                 'success': False,
                 'error': 'INVALID_PARAMETERS',
-                'message': '直线移动需要 6 个姿态值',
+                'message': str(e),
                 'ip': ip or 'N/A',
                 'result': None
             }
         
         def action():
-            return robot_control.controller.move_linear_pose(pose, velocity, acceleration)
+            return robot_control.controller.move_linear_pose(validated_pose, validated_velocity, validated_acceleration)
         
         return _execute_robot_action(
             action=action,
@@ -437,8 +453,20 @@ def register_tools(mcp):
         Args:
             mode: 自由驱动模式 (0: 禁用, 1: 正常, 2: 强制)
         """
+        # 参数验证
+        try:
+            validated_mode = validate_free_driving_mode(mode, "mode")
+        except ValueError as e:
+            return {
+                'success': False,
+                'error': 'INVALID_PARAMETERS',
+                'message': str(e),
+                'ip': ip or 'N/A',
+                'result': None
+            }
+        
         def action():
-            return robot_control.controller.enable_free_driving(mode)
+            return robot_control.controller.enable_free_driving(validated_mode)
         
         return _execute_robot_action(
             action=action,
@@ -452,8 +480,22 @@ def register_tools(mcp):
     @mcp.tool()
     def move_tcp_direction(ip: Optional[str] = None, direction: int = 0, velocity: float = 0.2, acceleration: float = 0.2) -> dict:
         """以TCP方向移动机械臂"""
+        # 参数验证
+        try:
+            validated_direction = validate_tcp_direction(direction, "direction")
+            validated_velocity = validate_velocity(velocity, "velocity")
+            validated_acceleration = validate_acceleration(acceleration, "acceleration")
+        except ValueError as e:
+            return {
+                'success': False,
+                'error': 'INVALID_PARAMETERS',
+                'message': str(e),
+                'ip': ip or 'N/A',
+                'result': None
+            }
+        
         def action():
-            return robot_control.controller.move_tcp_direction(direction, velocity, acceleration)
+            return robot_control.controller.move_tcp_direction(validated_direction, validated_velocity, validated_acceleration)
         
         return _execute_robot_action(
             action=action,
@@ -467,8 +509,22 @@ def register_tools(mcp):
     @mcp.tool()
     def rotate_tcp_direction(ip: Optional[str] = None, direction: int = 0, velocity: float = 0.2, acceleration: float = 0.2) -> dict:
         """旋转TCP方向"""
+        # 参数验证
+        try:
+            validated_direction = validate_tcp_direction(direction, "direction")
+            validated_velocity = validate_velocity(velocity, "velocity")
+            validated_acceleration = validate_acceleration(acceleration, "acceleration")
+        except ValueError as e:
+            return {
+                'success': False,
+                'error': 'INVALID_PARAMETERS',
+                'message': str(e),
+                'ip': ip or 'N/A',
+                'result': None
+            }
+        
         def action():
-            return robot_control.controller.rotate_tcp_direction(direction, velocity, acceleration)
+            return robot_control.controller.rotate_tcp_direction(validated_direction, validated_velocity, validated_acceleration)
         
         return _execute_robot_action(
             action=action,
