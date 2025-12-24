@@ -19,7 +19,7 @@ conda env create -f environment.yml
 conda activate mcp-demo
 
 # 安装依赖
-./install.sh
+./scripts/install.sh
 ```
 
 ### 运行服务器
@@ -72,23 +72,32 @@ python -m server.mcp_server
 
 ```
 DianaApi_agent_MCP/
-├── server/
+├── docs/                  # 文档目录
+│   └── IMPROVEMENTS.md    # 改进建议文档
+├── scripts/               # 脚本目录
+│   ├── format_code.sh     # 代码格式化脚本
+│   └── install.sh         # 安装脚本
+├── server/                # MCP 服务器代码
 │   ├── mcp_server.py      # MCP 服务器主文件
 │   ├── tools.py           # 工具定义
 │   ├── config.py          # 配置管理
 │   ├── error_handler.py   # 错误处理
 │   ├── utils.py           # 工具函数和辅助类
 │   └── robot_loader.py    # 机器人控制模块加载器
-├── src/
+├── src/                   # 源代码
 │   └── diana_api/         # 机械臂 API 核心库
 ├── lib/                   # 底层库文件 (.so)
-├── .mcp_env               # 环境配置
-├── var/
-│   └── mcp/               # MCP 数据目录
-├── examples/              # 示例脚本（`example_client.py`, `call_mcp_tool.py`）
+├── var/                   # 运行时数据
+│   ├── mcp/               # MCP 数据目录
+│   └── logs/              # 日志文件目录
+├── examples/              # 示例脚本
+│   ├── example_client.py
+│   └── call_mcp_tool.py
 ├── tests/                 # 测试脚本
 ├── environment.yml        # conda环境配置
-└── install.sh            # 安装脚本
+├── setup.py               # Python 包配置
+├── pyproject.toml         # 项目配置文件
+└── README.md              # 项目主文档
 ```
 
 ### 代码架构
@@ -147,6 +156,42 @@ PYTHONPATH=./src pytest -q
 ✅ 所有配置测试通过
 
 这些测试会 monkeypatch `diana_api` 的调用，验证任务模型与控制层逻辑，不需要连接真机。
+
+## 代码格式化
+
+项目使用 [Black](https://black.readthedocs.io/) 进行代码格式化。
+
+**安装格式化工具**:
+```bash
+# 使用 conda 环境（推荐）
+conda env update -f environment.yml
+
+# 或直接安装
+pip install black>=23.12.0 isort>=5.13.0
+```
+
+**格式化代码**:
+```bash
+# 使用脚本（推荐）
+./scripts/format_code.sh
+
+# 或手动运行
+black .
+isort .
+```
+
+**只检查不修改**:
+```bash
+black --check .
+isort --check .
+```
+
+**Pre-commit 钩子**（可选）:
+```bash
+pip install pre-commit
+pre-commit install
+# 之后每次 git commit 前会自动格式化
+```
 
 ## 许可证
 

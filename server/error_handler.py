@@ -1,4 +1,4 @@
-from .config import DATA_DIR, AUDIT_LOG, now_ts
+from .config import AUDIT_LOG, DATA_DIR, now_ts
 
 # Error message templates - centralized error message management
 ERROR_MESSAGES = {
@@ -16,22 +16,25 @@ ERROR_MESSAGES = {
     "ROBOT_LIBRARY_NOT_AVAILABLE": "机器人库不可用",
     "FILE_OPERATION_FAILED": "文件操作失败",
     "INVALID_PARAMETERS": "参数无效",
-    "UNKNOWN_ERROR": "未知错误"
+    "UNKNOWN_ERROR": "未知错误",
 }
+
 
 def log(message: str) -> None:
     """记录日志消息"""
     try:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
-        with open(AUDIT_LOG, 'a', encoding='utf-8') as af:
+        with open(AUDIT_LOG, "a", encoding="utf-8") as af:
             af.write(f"{now_ts()} {message}\n")
     except Exception:
         # best-effort logging; swallow errors to avoid crashing server
         pass
 
-def log_exception(exc: Exception, prefix: str = '') -> None:
+
+def log_exception(exc: Exception, prefix: str = "") -> None:
     """记录异常信息"""
     log(f"{prefix}{exc!r}")
+
 
 def get_error_message(error_key: str, **kwargs) -> str:
     """根据错误键获取错误消息"""
@@ -39,6 +42,7 @@ def get_error_message(error_key: str, **kwargs) -> str:
     if kwargs:
         message = message.format(**kwargs)
     return message
+
 
 class RobotControlError(Exception):
     """机器人控制错误"""
