@@ -42,6 +42,7 @@ VS Code 中可在 `.vscode/mcp.json` 指向同样的命令。
 | `move_joint_positions` | 以关节模式移动机械臂（7个关节值） | `joints:list`, `velocity:float`, `acceleration:float`, 可选 `ip:str` |
 | `move_joint_positions_json` | 以关节模式移动机械臂（JSON字符串格式） | `joints_json:str`, `velocity:float`, `acceleration:float`, 可选 `ip:str` |
 | `move_linear_pose` | 以TCP直线模式移动机械臂（6元pose） | `pose:list`, `velocity:float`, `acceleration:float`, 可选 `ip:str` |
+| `move_to_home_position` | 移动到默认原点位置 | `velocity:float` (默认0.5), `acceleration:float` (默认0.5), 可选 `ip:str` |
 | `move_tcp_direction` | 以TCP方向移动机械臂 | `direction:int`, `velocity:float`, `acceleration:float`, 可选 `ip:str` |
 | `rotate_tcp_direction` | 旋转TCP方向 | `direction:int`, `velocity:float`, `acceleration:float`, 可选 `ip:str` |
 | `stop_motion` | 立即停止机械臂运动 | 可选 `ip:str` |
@@ -60,5 +61,10 @@ VS Code 中可在 `.vscode/mcp.json` 指向同样的命令。
 | `cancel_task` | 取消指定任务（会尝试停止机械臂） | `task_id:str` |
 
 所有工具都基于 `diana_api.control` 模块，提供高层封装和错误处理。工具会自动处理连接管理、IP规范化、输出抑制等功能。
+
+**默认原点位置配置**：
+- 默认原点关节角度（度）：`[-85, -25, 16, 130, 7, -60, -3]`
+- 可在 `server/config.py` 中修改 `DEFAULT_HOME_JOINTS_DEGREES` 来调整默认原点位置
+- `move_to_home_position` 工具会自动将角度转换为弧度并移动到该位置
 
 示例脚本位于仓库的 `examples/` 目录；例如 `examples/call_mcp_tool.py` 提供了一个本地直接调用工具的示例，便于开发时快速验证功能。

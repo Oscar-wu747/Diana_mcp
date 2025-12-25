@@ -1,10 +1,11 @@
 """MCP工具函数"""
 
+import math
 from typing import Any, Callable, Dict, Optional, Union
 
 from fastmcp import Context
 
-from .config import get_net_info
+from .config import DEFAULT_HOME_JOINTS_DEGREES, get_net_info
 from .error_handler import RobotControlError, log_exception
 from .robot_loader import robot_control
 from .utils import (
@@ -652,4 +653,58 @@ def register_tools(mcp):
             error_code="TASK_CANCEL_FAILED",
             error_prefix="取消任务失败: ",
             error_fields={"task_id": task_id},
+        )
+
+    @mcp.tool()
+    def move_to_home_position(
+        ip: Optional[str] = None,
+        velocity: float = 0.5,
+        acceleration: float = 0.5,
+    ) -> dict:
+        """移动机械臂到默认原点位置
+
+        Args:
+            ip: 可选的 IP 地址
+            velocity: 速度 (默认 0.5)
+            acceleration: 加速度 (默认 0.5)
+
+        默认原点关节角度（度）从配置文件读取: DEFAULT_HOME_JOINTS_DEGREES
+        """
+        # 从配置文件读取默认原点关节角度（度）
+        home_joints_degrees = DEFAULT_HOME_JOINTS_DEGREES.copy()
+        # 转换为弧度
+        home_joints_radians = [math.radians(deg) for deg in home_joints_degrees]
+
+        # 参数验证
+        try:
+            validated_joints = validate_joints(home_joints_radians, "home_joints")
+            validated_velocity = validate_velocity(velocity, "velocity")
+            validated_acceleration = validate_acceleration(acceleration, "acceleration")
+        except ValueError as e:
+            return {
+                "success": False,
+                "error": "INVALID_PARAMETERS",
+                "message": str(e),
+                "ip": ip or "N/A",
+                "result": None,
+            }
+
+        def action():
+            result = robot_control.controller.move_joint_positions(
+                validated_joints, validated_velocity, validated_acceleration
+            )
+            return {
+                **result,
+                "home_joints_degrees": home_joints_degrees,
+                "home_joints_radians": home_joints_radians,
+                "message": "机械臂正在移动到默认原点位置",
+            }
+
+        return _execute_robot_action(
+            action=action,
+            ip=ip,
+            raise_on_mismatch=True,
+            error_code="MOVE_TO_HOME_FAILED",
+            error_prefix="移动到原点位置失败: ",
+            error_fields={"result": None},
         )

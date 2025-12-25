@@ -51,7 +51,9 @@ python -m server.mcp_server
 | `get_tcp_pose` | 获取TCP位置 | `ip?` |
 | `get_robot_state` | 获取机器人状态 | `ip?` |
 | `move_joint_positions` | 关节模式移动 | `ip?, joints[7], velocity?, acceleration?` |
+| `move_joint_positions_json` | 关节模式移动（JSON格式） | `ip?, joints_json, velocity?, acceleration?` |
 | `move_linear_pose` | 直线模式移动 | `ip?, pose[6], velocity?, acceleration?` |
+| `move_to_home_position` | 移动到默认原点位置 | `ip?, velocity?, acceleration?` |
 | `move_tcp_direction` | TCP方向移动 | `ip?, direction, velocity?, acceleration?` |
 | `rotate_tcp_direction` | TCP旋转 | `ip?, direction, velocity?, acceleration?` |
 | `stop_motion` | 停止运动 | `ip?` |
@@ -128,12 +130,19 @@ async def main():
             "velocity": 0.2
         })
 
+        # 移动到默认原点位置（推荐）
+        await client.call_tool("move_to_home_position", {
+            "velocity": 0.5,
+            "acceleration": 0.5
+        })
+
 asyncio.run(main())
 ```
 
 ## 配置
 
 - **默认IP**: `192.168.10.75`
+- **默认原点位置**: 关节角度（度）`[-85, -25, 16, 130, 7, -60, -3]`，可在 `server/config.py` 中修改 `DEFAULT_HOME_JOINTS_DEGREES`
 - **Python版本**: >=3.8
 - **依赖**: fastmcp>=2.13.0
 

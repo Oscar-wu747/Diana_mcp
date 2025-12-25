@@ -13,6 +13,10 @@ AUDIT_LOG = DATA_DIR / "audit.log"
 DEFAULT_ROBOT_IP = "192.168.10.75"
 DEFAULT_PORTS = (0, 0, 0, 0, 0)
 
+# Default home position joint angles (in degrees)
+# 默认原点关节角度（度）：-85, -25, 16, 130, 7, -60, -3
+DEFAULT_HOME_JOINTS_DEGREES = [-85, -25, 16, 130, 7, -60, -3]
+
 
 def now_ts():
     """获取当前时间戳"""
